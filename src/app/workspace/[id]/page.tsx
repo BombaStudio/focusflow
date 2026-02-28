@@ -12,6 +12,57 @@ import { useSession, signIn } from "next-auth/react";
 
 type Mode = "focus" | "break";
 
+let globalAudioCtx: AudioContext | null = null;
+const playCyberpunkAlarm = () => {
+  try {
+    if (typeof window === "undefined") return;
+    const AudioContextCtor = window.AudioContext || (window as any).webkitAudioContext;
+    if (!AudioContextCtor) return;
+    
+    if (!globalAudioCtx) {
+      globalAudioCtx = new AudioContextCtor();
+    }
+    const ctx = globalAudioCtx;
+    
+    if (ctx.state === "suspended") {
+      ctx.resume();
+    }
+    
+    const playBeep = (startTime: number) => {
+      const osc1 = ctx.createOscillator();
+      const osc2 = ctx.createOscillator();
+      const gain = ctx.createGain();
+      
+      osc1.type = "sawtooth";
+      osc1.frequency.setValueAtTime(440, startTime);
+      osc1.frequency.exponentialRampToValueAtTime(880, startTime + 0.2); 
+      
+      osc2.type = "square";
+      osc2.frequency.setValueAtTime(220, startTime); 
+      
+      osc1.connect(gain);
+      osc2.connect(gain);
+      gain.connect(ctx.destination);
+      
+      gain.gain.setValueAtTime(0, startTime);
+      gain.gain.linearRampToValueAtTime(0.3, startTime + 0.05);
+      gain.gain.exponentialRampToValueAtTime(0.01, startTime + 0.3);
+      
+      osc1.start(startTime);
+      osc2.start(startTime);
+      osc1.stop(startTime + 0.3);
+      osc2.stop(startTime + 0.3);
+    };
+
+    const now = ctx.currentTime;
+    [0, 0.4, 0.8, 1.6, 2.0, 2.4].forEach(offset => {
+      playBeep(now + offset);
+    });
+  } catch (error) {
+    console.warn("Audio playback failed:", error);
+  }
+};
+
 export default function WorkSpace() {
   const router = useRouter();
   const params = useParams();
@@ -49,9 +100,12 @@ export default function WorkSpace() {
 
   useEffect(() => {
     if (!isRunning) {
+      if (timeLeft === 0) {
+        playCyberpunkAlarm();
+      }
       setTimeLeft((mode === "focus" ? focusTime : breakTime) * 60);
     }
-  }, [mode, focusTime, breakTime, isRunning]);
+  }, [mode, focusTime, breakTime, isRunning, timeLeft]);
 
   const toggleTimer = () => setIsRunning(!isRunning);
 
