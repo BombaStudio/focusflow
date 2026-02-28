@@ -5,9 +5,12 @@ import { InputField } from "../../components/UI/InputField";
 import { Header } from "../../components/Header";
 import { Button } from "../../components/UI/Button";
 import { EmptyState } from "../../components/UI/EmptyState";
+import { AuthEmptyState } from "../../components/UI/AuthEmptyState";
 import { TodoItem, type Todo } from "../../components/UI/TodoItem";
 import { LayoutView } from "../../components/LayoutView";
+
 export default function Home() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [todos, setTodos] = useState<Todo[]>([
     { id: "1", text: "Sistem bileşenlerini optimize et", completed: false },
     { id: "2", text: "Protokol alfa güncellemesini tamamla", completed: true },
@@ -42,38 +45,46 @@ export default function Home() {
     <LayoutView>
       {/* Header Alanı */}
         <Header title="Focus_Flow // Terminal" description="Görev Protokolü"/>
+        
+        {!isAuthenticated ? (
+          <AuthEmptyState onLogin={() => setIsAuthenticated(true)} />
+        ) : (
+          <div className="flex flex-col mt-4">
+            {/* Ekleme Formu */}
+            <form onSubmit={addTodo} className="relative group">
+              <div className="absolute -inset-0.5 bg-gradient-to-r from-emerald-500/20 to-emerald-500/0 rounded-xl blur opacity-30 group-hover:opacity-60 transition duration-500" />
+              <div className="relative flex flex-col sm:flex-row items-center bg-[#0a0a0a] rounded-xl border border-zinc-800/80 p-2 focus-within:border-emerald-500/50 transition-colors gap-2 sm:gap-0">
+                <InputField
+                  value={newTodo}
+                  onChange={(e) => setNewTodo(e.target.value)}
+                  placeholder="Yeni bir görev tanımla..."
+                />
+                <Button
+                  type="submit"
+                  className="w-full sm:w-auto"
+                  disabled={!newTodo.trim()}
+                >
+                  EKLE
+                </Button>
+              </div>
+            </form>
 
-        {/* Ekleme Formu */}
-        <form onSubmit={addTodo} className="relative group">
-          <div className="absolute -inset-0.5 bg-gradient-to-r from-emerald-500/20 to-emerald-500/0 rounded-xl blur opacity-30 group-hover:opacity-60 transition duration-500" />
-          <div className="relative flex flex-col sm:flex-row items-center bg-[#0a0a0a] rounded-xl border border-zinc-800/80 p-2 focus-within:border-emerald-500/50 transition-colors gap-2 sm:gap-0">
-            <InputField
-              value={newTodo}
-              onChange={(e) => setNewTodo(e.target.value)}
-              placeholder="Yeni bir görev tanımla..."
-            />
-            <Button
-              type="submit"
-              className="w-full sm:w-auto"
-              disabled={!newTodo.trim()}
-            >
-              EKLE
-            </Button>
+            <div className="h-6"></div>
+
+            {/* Liste */}
+            <ul className="flex flex-col gap-3">
+              {todos.map((todo) => (
+                <TodoItem 
+                  key={todo.id} 
+                  todo={todo} 
+                  onToggle={toggleTodo} 
+                  onDelete={deleteTodo} 
+                />
+              ))}
+              {todos.length === 0 && <EmptyState />}
+            </ul>
           </div>
-        </form>
-
-        {/* Liste */}
-        <ul className="flex flex-col gap-3">
-          {todos.map((todo) => (
-            <TodoItem 
-              key={todo.id} 
-              todo={todo} 
-              onToggle={toggleTodo} 
-              onDelete={deleteTodo} 
-            />
-          ))}
-          {todos.length === 0 && <EmptyState />}
-        </ul>
+        )}
     </LayoutView>
   );
 }
