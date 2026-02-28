@@ -1,3 +1,5 @@
+'use client';
+
 import React from 'react';
 import { Button } from './Button';
 
@@ -9,7 +11,7 @@ export const AuthEmptyState: React.FC<AuthEmptyStateProps> = ({ onLogin }) => {
   return (
     <div className="flex flex-col items-center justify-center py-16 px-4 mt-8 text-center border border-dashed border-zinc-800 rounded-xl bg-[#0a0a0a]/50 relative group">
       <div className="absolute -inset-0.5 bg-linear-to-b from-blue-500/5 to-transparent rounded-xl blur opacity-30 pointer-events-none" />
-      <div className="relative z-10 flex flex-col items-center max-w-sm mx-auto">
+      <div className="relative z-10 flex flex-col items-center max-w-sm mx-auto w-full">
         <div className="w-16 h-16 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center mb-6 shadow-inner">
           <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-zinc-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M12 11c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v3h16v-3c0-2.66-5.33-4-8-4z" />
@@ -22,9 +24,12 @@ export const AuthEmptyState: React.FC<AuthEmptyStateProps> = ({ onLogin }) => {
         </p>
 
         <Button 
-          onClick={onLogin}
+          onClick={(e) => {
+            e.preventDefault();
+            onLogin();
+          }}
           type="button"
-          className="w-full flex items-center justify-center gap-3 px-6! py-3.5! bg-zinc-100! hover:bg-white! text-zinc-900! border-none rounded-xl font-bold shadow-[0_0_20px_rgba(255,255,255,0.05)] hover:shadow-[0_0_25px_rgba(255,255,255,0.15)] transition-all"
+          className="w-full relative z-20 flex items-center justify-center gap-3 px-6! py-3.5! bg-zinc-100! hover:bg-white! text-zinc-900! border-none rounded-xl font-bold shadow-[0_0_20px_rgba(255,255,255,0.05)] hover:shadow-[0_0_25px_rgba(255,255,255,0.15)] transition-all cursor-pointer"
         >
           <svg className="w-5 h-5 bg-white rounded-full p-0.5" viewBox="0 0 24 24">
             <path

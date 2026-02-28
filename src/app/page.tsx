@@ -8,9 +8,11 @@ import { EmptyState } from "../../components/UI/EmptyState";
 import { AuthEmptyState } from "../../components/UI/AuthEmptyState";
 import { TodoItem, type Todo } from "../../components/UI/TodoItem";
 import { LayoutView } from "../../components/LayoutView";
+import { useSession, signIn } from "next-auth/react";
 
 export default function Home() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const { status } = useSession();
+  const isAuthenticated = status === "authenticated";
   const [todos, setTodos] = useState<Todo[]>([
     { id: "1", text: "Sistem bileşenlerini optimize et", completed: false },
     { id: "2", text: "Protokol alfa güncellemesini tamamla", completed: true },
@@ -46,8 +48,12 @@ export default function Home() {
       {/* Header Alanı */}
         <Header title="Focus_Flow // Terminal" description="Görev Protokolü"/>
         
-        {!isAuthenticated ? (
-          <AuthEmptyState onLogin={() => setIsAuthenticated(true)} />
+        {status === "loading" ? (
+          <div className="flex justify-center p-12">
+            <div className="w-8 h-8 rounded-full border-t-2 border-emerald-500 animate-spin" />
+          </div>
+        ) : !isAuthenticated ? (
+          <AuthEmptyState onLogin={() => signIn("google")} />
         ) : (
           <div className="flex flex-col mt-4">
             {/* Ekleme Formu */}

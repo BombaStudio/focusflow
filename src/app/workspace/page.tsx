@@ -6,11 +6,13 @@ import { LayoutView } from "../../../components/LayoutView";
 import { Button } from "../../../components/UI/Button";
 import { InputField } from "../../../components/UI/InputField";
 import { AuthEmptyState } from "../../../components/UI/AuthEmptyState";
+import { useSession, signIn } from "next-auth/react";
 
 type Mode = "focus" | "break";
 
 export default function WorkSpace() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const { status } = useSession();
+  const isAuthenticated = status === "authenticated";
   const [mode, setMode] = useState<Mode>("focus");
   const [focusTime, setFocusTime] = useState(25);
   const [breakTime, setBreakTime] = useState(5);
@@ -71,8 +73,12 @@ export default function WorkSpace() {
     <LayoutView>
       <Header title="Focus_Flow // WorkSpace" description="Çalışma Alanı" />
       
-      {!isAuthenticated ? (
-        <AuthEmptyState onLogin={() => setIsAuthenticated(true)} />
+      {status === "loading" ? (
+        <div className="flex justify-center p-12">
+          <div className="w-8 h-8 rounded-full border-t-2 border-emerald-500 animate-spin" />
+        </div>
+      ) : !isAuthenticated ? (
+        <AuthEmptyState onLogin={() => signIn("google")} />
       ) : (
         <div className="flex flex-col gap-8 w-full mt-4">
           {/* Ayarlar & Mod Seçimi */}
