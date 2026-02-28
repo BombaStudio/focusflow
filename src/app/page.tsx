@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { InputField } from "../../components/UI/InputField";
 import { Header } from "../../components/Header";
 import { Button } from "../../components/UI/Button";
@@ -9,38 +9,52 @@ import { AuthEmptyState } from "../../components/UI/AuthEmptyState";
 import { TodoItem, type Todo } from "../../components/UI/TodoItem";
 import { LayoutView } from "../../components/LayoutView";
 import { useSession, signIn } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { getTodos, addTodo as addTodoAction, deleteTodo as deleteTodoAction } from "../actions/todo";
 
 export default function Home() {
+  const router = useRouter();
   const { status } = useSession();
   const isAuthenticated = status === "authenticated";
-  const [todos, setTodos] = useState<Todo[]>([
-    { id: "1", text: "Sistem bileşenlerini optimize et", completed: false },
-    { id: "2", text: "Protokol alfa güncellemesini tamamla", completed: true },
-    { id: "3", text: "Ana ağ (mainnet) bağlantısını test et", completed: false },
-  ]);
+  const [todos, setTodos] = useState<Todo[]>([]);
   const [newTodo, setNewTodo] = useState("");
 
-  const addTodo = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (isAuthenticated) {
+      getTodos().then(setTodos).catch(console.error);
+    }
+  }, [isAuthenticated]);
+
+  const handleAddTodo = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTodo.trim()) return;
     
-    setTodos([
-      { id: crypto.randomUUID(), text: newTodo, completed: false },
-      ...todos,
-    ]);
+    const text = newTodo;
     setNewTodo("");
+    try {
+      const addedTodo = await addTodoAction(text);
+      setTodos((prev) => [addedTodo, ...prev]);
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   const toggleTodo = (id: string) => {
-    setTodos(
-      todos.map((todo) =>
-        todo.id === id ? { ...todo, completed: !todo.completed } : todo
-      )
-    );
+    const todo = todos.find(t => t.id === id);
+    if (!todo?.completed) {
+      router.push(`/workspace/${id}`);
+    }
   };
 
-  const deleteTodo = (id: string) => {
+  const deleteTodo = async (id: string) => {
     setTodos(todos.filter((todo) => todo.id !== id));
+    try {
+      await deleteTodoAction(id);
+    } catch (error) {
+      console.error(error);
+      // Re-fetch on error to ensure sync
+      getTodos().then(setTodos);
+    }
   };
 
   return (
@@ -57,7 +71,7 @@ export default function Home() {
         ) : (
           <div className="flex flex-col mt-4">
             {/* Ekleme Formu */}
-            <form onSubmit={addTodo} className="relative group">
+            <form onSubmit={handleAddTodo} className="relative group">
               <div className="absolute -inset-0.5 bg-gradient-to-r from-emerald-500/20 to-emerald-500/0 rounded-xl blur opacity-30 group-hover:opacity-60 transition duration-500" />
               <div className="relative flex flex-col sm:flex-row items-center bg-[#0a0a0a] rounded-xl border border-zinc-800/80 p-2 focus-within:border-emerald-500/50 transition-colors gap-2 sm:gap-0">
                 <InputField

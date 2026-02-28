@@ -1,16 +1,22 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Header } from "../../../components/Header";
-import { LayoutView } from "../../../components/LayoutView";
-import { Button } from "../../../components/UI/Button";
-import { InputField } from "../../../components/UI/InputField";
-import { AuthEmptyState } from "../../../components/UI/AuthEmptyState";
+import { useParams, useRouter } from "next/navigation";
+import { completeTodo } from "../../../actions/todo";
+import { Header } from "../../../../components/Header";
+import { LayoutView } from "../../../../components/LayoutView";
+import { Button } from "../../../../components/UI/Button";
+import { InputField } from "../../../../components/UI/InputField";
+import { AuthEmptyState } from "../../../../components/UI/AuthEmptyState";
 import { useSession, signIn } from "next-auth/react";
 
 type Mode = "focus" | "break";
 
 export default function WorkSpace() {
+  const router = useRouter();
+  const params = useParams();
+  const id = params?.id as string;
+
   const { status } = useSession();
   const isAuthenticated = status === "authenticated";
   const [mode, setMode] = useState<Mode>("focus");
@@ -54,10 +60,16 @@ export default function WorkSpace() {
     setTimeLeft((mode === "focus" ? focusTime : breakTime) * 60);
   };
 
-  const completeTask = () => {
-    // Görev tamamlandığında sayaç sıfırlanır ve dinlenme moduna geçilir
+  const completeTask = async () => {
     setIsRunning(false);
-    setMode("break");
+    try {
+      if (id) {
+        await completeTodo(id);
+      }
+      router.push("/");
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   const formatTime = (seconds: number) => {
@@ -181,7 +193,7 @@ export default function WorkSpace() {
 
               {/*Görevi Tamamla Butonu*/}
               <Button 
-                onClick={toggleTimer}
+                onClick={completeTask}
                 className={`w-40 justify-center flex font-bold tracking-[0.2em] rounded-xl py-3  hover:shadow-[0_0_15px_rgba(34,211,238,0.3)]`}
               >
                 Görevi Tamamla
