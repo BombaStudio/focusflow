@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { completeTodo } from "../../../actions/todo";
+import { completeTodo, saveWorkSession } from "../../../actions/todo";
+import { toast } from "sonner";
 import { Header } from "../../../../components/Header";
 import { LayoutView } from "../../../../components/LayoutView";
 import { Button } from "../../../../components/UI/Button";
@@ -76,53 +77,84 @@ export default function WorkSpace() {
   const [timeLeft, setTimeLeft] = useState(25 * 60);
   const [isRunning, setIsRunning] = useState(false);
 
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const [endTime, setEndTime] = useState<number | null>(null);
 
+  // Timer logic using target time calculation
   useEffect(() => {
-    if (isRunning) {
-      timerRef.current = setInterval(() => {
-        setTimeLeft((prev) => {
-          if (prev <= 1) {
-            clearInterval(timerRef.current as NodeJS.Timeout);
-            setIsRunning(false);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    } else if (timerRef.current) {
-      clearInterval(timerRef.current);
-    }
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  }, [isRunning]);
+    let interval: NodeJS.Timeout;
 
+    if (isRunning && endTime !== null) {
+      interval = setInterval(() => {
+        const now = Date.now();
+        const remaining = Math.max(0, Math.ceil((endTime - now) / 1000));
+        
+        setTimeLeft(remaining);
+
+        if (remaining <= 0) {
+          setIsRunning(false);
+          setEndTime(null);
+          playCyberpunkAlarm();
+          
+          // Save the completed session to the database
+          const duration = mode === "focus" ? focusTime : breakTime;
+          saveWorkSession(mode, duration)
+            .then(() => toast.success(`${mode === "focus" ? "Odak" : "Mola"} oturumu kaydedildi.`))
+            .catch((err) => {
+              console.error("Session save error:", err);
+              toast.error("Oturum süresi kaydedilemedi.");
+            });
+            
+          setTimeLeft(duration * 60);
+        }
+      }, 200); // Check frequently
+    }
+
+    return () => clearInterval(interval);
+  }, [isRunning, endTime, mode, focusTime, breakTime]);
+
+  // Reset display when times change while paused
   useEffect(() => {
     if (!isRunning) {
-      if (timeLeft === 0) {
-        playCyberpunkAlarm();
-      }
       setTimeLeft((mode === "focus" ? focusTime : breakTime) * 60);
     }
-  }, [mode, focusTime, breakTime, isRunning, timeLeft]);
+  }, [mode, focusTime, breakTime, isRunning]);
 
-  const toggleTimer = () => setIsRunning(!isRunning);
+  const toggleTimer = () => {
+    if (!isRunning) {
+      const durationSeconds = timeLeft > 0 ? timeLeft : (mode === "focus" ? focusTime : breakTime) * 60;
+      setEndTime(Date.now() + durationSeconds * 1000);
+      setIsRunning(true);
+    } else {
+      setIsRunning(false);
+      setEndTime(null);
+    }
+  };
 
   const resetTimer = () => {
+    setIsRunning(false);
+    setEndTime(null);
     setIsRunning(false);
     setTimeLeft((mode === "focus" ? focusTime : breakTime) * 60);
   };
 
   const completeTask = async () => {
     setIsRunning(false);
+    setEndTime(null);
+    
+    // Yükleniyor bildirimi başlat
+    const toastId = toast.loading("Görev tamamlanıyor...");
+    
     try {
       if (id) {
         await completeTodo(id);
       }
+      
+      // Süre kaldıysa kalan miktarı hesaplayıp başarı bildirimi gösterilebilir ama genelde basit tutulur.
+      toast.success("Görev başarıyla tamamlandı!", { id: toastId });
       router.push("/");
     } catch (error) {
       console.error(error);
+      toast.error("Görev tamamlanırken bir hata oluştu.", { id: toastId });
     }
   };
 

@@ -11,6 +11,7 @@ import { LayoutView } from "../../components/LayoutView";
 import { useSession, signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { getTodos, addTodo as addTodoAction, deleteTodo as deleteTodoAction } from "../actions/todo";
+import { toast } from "sonner";
 
 export default function Home() {
   const router = useRouter();
@@ -34,8 +35,10 @@ export default function Home() {
     try {
       const addedTodo = await addTodoAction(text);
       setTodos((prev) => [addedTodo, ...prev]);
+      toast.success("Görev başarıyla eklendi");
     } catch (error) {
       console.error(error);
+      toast.error("Görev eklenemedi! Lütfen bağlantınızı kontrol edin.");
     }
   };
 
@@ -47,13 +50,17 @@ export default function Home() {
   };
 
   const deleteTodo = async (id: string) => {
+    // Optimistic UI updates could lead to state desync, so let's keep it but with toast rollback warning
+    const previousTodos = [...todos];
     setTodos(todos.filter((todo) => todo.id !== id));
     try {
       await deleteTodoAction(id);
+      toast.success("Görev silindi");
     } catch (error) {
       console.error(error);
-      // Re-fetch on error to ensure sync
-      getTodos().then(setTodos);
+      toast.error("Görev silinemedi! Değişiklikler geri alınıyor.");
+      // Re-fetch or restore on error to ensure sync
+      setTodos(previousTodos);
     }
   };
 
