@@ -41,12 +41,12 @@ export default function Home() {
   return (
     <LayoutView>
       {/* Header Alanı */}
-        <Header />
+        <Header title="Focus_Flow // Terminal" description="Görev Protokolü"/>
 
         {/* Ekleme Formu */}
         <form onSubmit={addTodo} className="relative group">
           <div className="absolute -inset-0.5 bg-gradient-to-r from-emerald-500/20 to-emerald-500/0 rounded-xl blur opacity-30 group-hover:opacity-60 transition duration-500" />
-          <div className="relative flex items-center bg-[#0a0a0a] rounded-xl border border-zinc-800/80 p-2 focus-within:border-emerald-500/50 transition-colors">
+          <div className="relative flex flex-col sm:flex-row items-center bg-[#0a0a0a] rounded-xl border border-zinc-800/80 p-2 focus-within:border-emerald-500/50 transition-colors gap-2 sm:gap-0">
             <InputField
               value={newTodo}
               onChange={(e) => setNewTodo(e.target.value)}
@@ -54,6 +54,7 @@ export default function Home() {
             />
             <Button
               type="submit"
+              className="w-full sm:w-auto"
               disabled={!newTodo.trim()}
             >
               EKLE
